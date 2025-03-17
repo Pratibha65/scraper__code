@@ -1,7 +1,6 @@
 import re
 import requests
 from bs4 import BeautifulSoup
-from serpapi.google_search import GoogleSearch
 import random
 import os
 
@@ -26,10 +25,10 @@ def extract_contacts(url):
         meta_tag = soup.find("meta", attrs={"http-equiv": "refresh"})
         
         # If the response is an HTML page with a meta refresh, extract the new URL
-        if meta_tag and "URL=" in meta_tag["content"]:
-            new_url = meta_tag["content"].split("URL=")[-1].strip()
-            print(f"Redirect detected! Fetching new URL: {new_url}\n")
-            response = requests.get(new_url, headers=headers, timeout=10)
+        # if meta_tag and "URL=" in meta_tag["content"]:
+        #     new_url = meta_tag["content"].split("URL=")[-1].strip()
+        #     print(f"Redirect detected! Fetching new URL: {new_url}\n")
+        #     response = requests.get(new_url, headers=headers, timeout=10)
 
 
         if response.status_code != 200:
@@ -56,26 +55,43 @@ def extract_contacts(url):
 def search_contacts(consignee, location):
     query = f'{consignee} contact email phone site:linkedin.com OR site:facebook.com OR site:yellowpages.com'
     print(f"\nSearch Query: {query}\n")
-    params = {"engine": "google", "q": query, "num": 5, "api_key": SERP_API_KEY}
+    headers = {
+        "X-API-KEY": SERP_API_KEY,
+        "Content-Type": "application/json"
+    }
     
-    search = GoogleSearch(params)
-    results = search.get_dict().get("organic_results", [])
+    payload = {
+        "q": query,
+        "num": 5
+    }
     
-    print(f"Found {len(results)} search results")
-    phones, emails = [], []
-    
-    for result in results:
-        url = result.get("link", "")
-        if not url:
-            print("\nSkipping empty URL.\n")
-            continue
-        print(f"Processing result: {url}")
-        new_phones, new_emails = extract_contacts(url)
-        phones.extend(new_phones) 
-        emails.extend(new_emails)
-    
-    print(f"___________________________________________________________\nTotal unique phones: {len(set(phones))}, Total unique emails: {len(set(emails))}\n\n")
-    
-    return list(phones), list(emails)
+    try:
+        response = requests.post("https://google.serper.dev/search", json=payload, headers=headers)
+        response.raise_for_status()  # Raise an error if request fails
+        results = response.json().get("organic", [])
+
+        print(f"Found {len(results)} search results")
+
+        phones, emails = [], []
+        for result in results:
+            url = result.get("link", "")
+            if not url:
+                print("\nSkipping empty URL.\n")
+                continue
+
+            print(f"Processing result: {url}")
+            new_phones, new_emails = extract_contacts(url)
+            phones.extend(new_phones) 
+            emails.extend(new_emails)
+
+        print(f"___________________________________________________________\nTotal unique phones: {len(set(phones))}, Total unique emails: {len(set(emails))}\n\n")
+        return list(phones), list(emails)
+
+    except Exception as e:
+        print(f"Error fetching search results: {e}")
+        return [], []
+
+# Test function
+
 
 extract_contacts(url)

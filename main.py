@@ -1,5 +1,4 @@
 import os
-import serpapi
 import time 
 import pandas as pd
 from dotenv import load_dotenv
@@ -10,7 +9,7 @@ load_dotenv()
 api_key = os.getenv('SERP_API_KEY')  
 print(api_key)
 
-# client = serpapi.Client(api_key=api_key)
+
 
 def Read_Consignee(file_path: str) -> None:
     df=pd.read_csv(file_path)
@@ -27,7 +26,7 @@ def Read_Consignee(file_path: str) -> None:
         location = row["Location"]
         print(f"Processing: {consignee_name} from {location}----------------------------------->\n")
 
-        # Fetch LinkedIn data using SerpAPI
+        # Fetch LinkedIn data using Serper
         linkedin_url, linkedin_connected_people = get_company_details(consignee_name,location)
         
         # Find company's official website
@@ -45,17 +44,17 @@ def Read_Consignee(file_path: str) -> None:
             phones, emails = extract_contacts(website_url)
             df.at[idx, "Phone Numbers"] = ", ".join(phones)
             df.at[idx, "Email"] = ", ".join(emails)
-            # if not phones or not emails:
-            #     s_phones, s_emails = search_contacts(consignee_name, location)
-            #     # Merge phones
-            #     if not phones:
-            #         phones = s_phones
-            #     # Merge emails
-            
-            #     if not emails:
-            #         emails = s_emails
-            #     df.at[idx, "Phone Numbers"] = ", ".join(phones)
-            #     df.at[idx, "Email"] = ", ".join(emails)
+            if not phones or not emails:
+                s_phones, s_emails = search_contacts(consignee_name, location)
+                # Merge phones
+                if not phones:
+                    phones = s_phones
+                # Merge emails
+
+                if not emails:
+                    emails = s_emails
+                df.at[idx, "Phone Numbers"] = ", ".join(phones)
+                df.at[idx, "Email"] = ", ".join(emails)
 
         # Implement rate limiting to avoid API blocks
         time.sleep(2)

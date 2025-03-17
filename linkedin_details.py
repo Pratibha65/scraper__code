@@ -1,5 +1,6 @@
 import os
 from serpapi.google_search import GoogleSearch
+import requests
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -21,17 +22,21 @@ def generate_peoplelinkedin_query(consignee_name:str , location: str) -> str:
 def get_search_results(query: str) -> list[dict]:
 
     try:
-        params = {
-            "engine":"google",
-            "q":query,
-            "num":10,
-            "api_key":SERP_API_KEY
+        headers = {
+            "X-API-KEY": SERP_API_KEY,  # Serper API requires 'X-API-KEY' in headers
+            "Content-Type": "application/json"
         }
-        
-        search = GoogleSearch(params)
-        results = search.get_dict()
-        
-        return results.get("organic_results",[])
+
+        payload = {
+            "q": query,
+            "num": 10
+        }
+
+        response = requests.post("https://google.serper.dev/search", json=payload, headers=headers)
+        response.raise_for_status()  # Raise exception for HTTP errors
+
+        results = response.json()
+        return results.get("organic", [])  # Extract organic search results
     except Exception as e:
         print(f"\nError fetching search results: {e}\n")
         return []

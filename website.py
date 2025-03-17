@@ -1,4 +1,5 @@
-from serpapi.google_search import GoogleSearch
+import os
+import requests
 from urllib.parse import urlparse
 from typing import Optional
 from linkedin_details import get_search_results
@@ -11,7 +12,7 @@ def get_official_website(consignee_name: str, location: str) -> Optional[str]:
     website_url = None
     consignee_terms = consignee_name.lower().split()
 
-    # Get search results from SerpAPI
+    # Get search results from Serper
     search_results = get_search_results(generate_website_query(consignee_name, location))
 
     # Score each result based on various factors

@@ -32,9 +32,9 @@ def extract_contacts(url):
 
 
         if response.status_code != 200:
-            print(f"-----------------------------------\nFailed to fetch page. Response: {response.text[:200]}\n")
-            print(response.text[:500])
-            return [], []
+            # print(f"-----------------------------------\nFailed to fetch page. Response: {response.text[:200]}\n")
+            # print(response.text[:500])
+            return False
         
         text = BeautifulSoup(response.text, 'html.parser').get_text()
         emails = re.findall(r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}', text)

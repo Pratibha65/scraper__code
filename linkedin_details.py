@@ -2,10 +2,13 @@ import os
 from serpapi.google_search import GoogleSearch
 import requests
 from dotenv import load_dotenv
-load_dotenv()
 
 
-SERP_API_KEY = os.getenv("SERP_API_KEY")
+def loadEnv():
+    load_dotenv()
+    SERP_API_KEY = os.getenv("SERP_API_KEY")
+
+loadEnv()
 
 print(f'******************************************\n{SERP_API_KEY}\n*********************************************\n')
 

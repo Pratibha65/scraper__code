@@ -1,15 +1,9 @@
 import os
 import time 
 import pandas as pd
-from dotenv import load_dotenv
 from linkedin_details import get_company_details
 from website import get_official_website
 from contacts import extract_contacts, search_contacts
-load_dotenv()
-api_key = os.getenv('SERP_API_KEY')  
-print(api_key)
-
-
 
 def Read_Consignee(file_path: str) -> None:
     df=pd.read_csv(file_path)
@@ -17,7 +11,6 @@ def Read_Consignee(file_path: str) -> None:
     df["LinkedIn URL"] = None
     df["LinkedIn Connected People"] = None
     df["Company Website"] = None
-    # df["Company Location"] = None
     df["Phone Numbers"] = None
     df["Email"]= None
     

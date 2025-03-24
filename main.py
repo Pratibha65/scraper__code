@@ -6,7 +6,16 @@ from website import get_official_website
 from contacts import extract_contacts, search_contacts
 
 def Read_Consignee(file_path: str) -> None:
-    df=pd.read_csv(file_path)
+    try:
+        df=pd.read_csv(file_path)
+    except FileNotFoundError:
+        print(f'Error: File {file_path} not found.')
+        return
+    
+    required_col = {"Consignee_Name", "Location"}
+    if not required_col.issubset(df.columns):
+        print(f"Error: Missing required columns {required_col - set(df.columns)} in input file.")
+        return
     
     df["LinkedIn URL"] = None
     df["LinkedIn Connected People"] = None
@@ -15,48 +24,58 @@ def Read_Consignee(file_path: str) -> None:
     df["Email"]= None
     
     for idx,row in df.iterrows():
-        consignee_name = row["Consignee_Name"]
-        location = row["Location"]
+        consignee_name = row.get("Consignee_Name", "").strip()
+        location = row.get("Location", "").strip()
+
+        if not consignee_name or not location:
+            print(f"Skipping row {idx} due to missing consignee name or location.")
+            continue
+
         print(f"Processing: {consignee_name} from {location}----------------------------------->\n")
 
-        # Fetch LinkedIn data using Serper
-        linkedin_url, linkedin_connected_people = get_company_details(consignee_name,location)
+        try:
+            linkedin_url, linkedin_connected_people = get_company_details(consignee_name,location)
+            
+            # Find company's official website
+            website_url = get_official_website(consignee_name,location)
+
+            # Update DataFrame with LinkedIn and website information
+            df.at[idx, "LinkedIn URL"] = linkedin_url
+            df.at[idx, "Company Website"] = website_url
+            df.at[idx, "LinkedIn Connected People"] = ", ".join(linkedin_connected_people)
+            # df.at[idx, "Company Location"] = ", ".join(company_locations)
+
+            # Extract contact details if website is found
+            phones, emails = [],[]
+            if website_url: 
+                phones, emails = extract_contacts(website_url, retries=3)
+                if phones:
+                    df.at[idx, "Phone Numbers"] = ", ".join(phones)
+                if emails:
+                    df.at[idx, "Email"] = ", ".join(emails)
+                if not phones or not emails:
+                    s_phones, s_emails = search_contacts(consignee_name, location)
+                    # Merge phones
+                    if not phones:
+                        phones = s_phones
+                    # Merge emails
+
+                    if not emails:
+                        emails = s_emails
+                    df.at[idx, "Phone Numbers"] = ", ".join(phones)
+                    df.at[idx, "Email"] = ", ".join(emails)
+        except Exception as e:
+            print(f"Error processing {consignee_name}: {e}")
+
         
-        # Find company's official website
-        website_url = get_official_website(consignee_name,location)
-
-        # Update DataFrame with LinkedIn and website information
-        df.at[idx, "LinkedIn URL"] = linkedin_url
-        df.at[idx, "Company Website"] = website_url
-        df.at[idx, "LinkedIn Connected People"] = ", ".join(linkedin_connected_people)
-        # df.at[idx, "Company Location"] = ", ".join(company_locations)
-
-        # Extract contact details if website is found
-        # phones, emails = [],[]
-        if website_url: 
-            phones, emails = extract_contacts(website_url)
-            df.at[idx, "Phone Numbers"] = ", ".join(phones)
-            df.at[idx, "Email"] = ", ".join(emails)
-            if not phones or not emails:
-                s_phones, s_emails = search_contacts(consignee_name, location)
-                # Merge phones
-                if not phones:
-                    phones = s_phones
-                # Merge emails
-
-                if not emails:
-                    emails = s_emails
-                df.at[idx, "Phone Numbers"] = ", ".join(phones)
-                df.at[idx, "Email"] = ", ".join(emails)
-
-        # Implement rate limiting to avoid API blocks
         time.sleep(2)
  
-    # Save enriched data to a new CSV file
+    
+    timestamp = time.strftime("%Y%m%d-%H%M%S")
     output_file = 'Consignee_Info.csv'
     df.to_csv(output_file, index=False)
-    print(f"Results saved to {output_file}")   
+    print(f"Results saved to {output_file} at {timestamp}")   
 
     
 if __name__ == '__main__':
-    Read_Consignee("consignee.csv")
+    Read_Consignee("Consignee.csv")

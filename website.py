@@ -1,8 +1,11 @@
 import os
 import requests
-from urllib.parse import urlparse
+from urllib.parse import urlparse, urljoin
 from typing import Optional
 from bs4 import BeautifulSoup
+import re
+import time
+import httpx
 from linkedin_details import get_search_results
 
 def generate_website_query(consignee_name: str, location: str) -> str:
@@ -131,6 +134,65 @@ def get_official_website(consignee_name: str, location: str) -> Optional[str]:
         print(f"No suitable website found for {consignee_name}\n")
 
     return website_url
+
+def get_final_redirect_url(url: str) -> str:
+    """
+    Tries to get the final redirected URL using `requests` first.
+    If `requests` fails, it retries using `httpx`.
+    """
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+                      "(KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+    }
+
+   
+    try:
+        response = requests.get(url, headers=headers, timeout=10, allow_redirects=True)
+        print(f"✅ `requests` Success: {response.url}")
+        return response.url  # Return final redirected URL
+    except requests.RequestException as e:
+        print(f"⚠️ `requests` failed: {e}")
+
+   
+    try:
+        with httpx.Client(follow_redirects=True) as client:
+            response = client.get(url, headers=headers, timeout=10)
+            print(f"✅ `httpx` Success: {response.url}")
+            return response.url
+    except httpx.RequestError as e:
+        print(f"❌ `httpx` also failed: {e}")
+
+
+    print(f"⚠️ Both `requests` and `httpx` failed. Returning original URL: {url}")
+    return url  # Return original URL if there's an error
+
+
+def find_contact_page(base_url: str) -> str:
+    """
+    Tries to find a 'Contact' page on the website, even if the site redirects.
+    """
+    try:
+        final_url = get_final_redirect_url(base_url)  
+        session = requests.Session()
+        response = session.get(final_url, timeout=5)
+
+        if response.status_code != 200:
+            print(f"⚠️ Failed to load {final_url} (Status Code: {response.status_code})")
+            return None
+
+        soup = BeautifulSoup(response.text, "html.parser")
+        for link in soup.find_all("a", href=True):
+            href = link["href"].lower()
+            if "contact" in href or "contact-us" in href:
+                contact_url = urljoin(final_url, link["href"])  
+                print(f"✅ Found Contact Page: {contact_url}")
+                return contact_url  
+
+    except requests.RequestException as e:
+        print(f"⚠️ Error fetching webpage: {e}")
+
+    print(f"❌ No contact page found on {base_url}")
+    return None
 
 # Test Function
 # get_official_website("ROYAL DOHA TRADING CONTRACTING AND SERVICES WLL", "Doha")

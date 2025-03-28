@@ -61,7 +61,8 @@ def extract_contacts(url,retries = 3):
                 return extract_contacts(new_url, retries=3)         
         
         text = soup.get_text()
-        emails = re.findall(r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}', text)
+        # emails = re.findall(r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}', text)
+        
         
         phone_pattern = r'(?:(?:\+|00)\d{1,3}[-.\s]?)?(?:\(?\d{1,4}\)?[-.\s]?)?\d{1,4}[-.\s]?\d{3,4}[-.\s]?\d{3,4}'
 

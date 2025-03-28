@@ -3,10 +3,10 @@ import requests
 from urllib.parse import urlparse
 from typing import Optional
 from bs4 import BeautifulSoup
-from linkedin_details import get_search_results
+from linkedin_details import get_search_results 
 
 def generate_website_query(consignee_name: str, location: str) -> str:
-    return f'{consignee_name} official website OR homepage OR "about us" OR "about.me" "{location}"'
+    return f'{consignee_name} official website OR homepage OR "about us" OR "about.me" OR "contact us" OR "contact" {location}'
 
 def get_official_website(consignee_name: str, location: str) -> Optional[str]:
     website_url = None
@@ -18,7 +18,7 @@ def get_official_website(consignee_name: str, location: str) -> Optional[str]:
 
     
     skip_domains = {
-        "volza.com", "eximpedia.app", "tradeatlas.com", "trademo.com", "atom.com"
+        "volza.com", "eximpedia.app", "tradeatlas.com", "trademo.com", "atom.com", "bestfoodimporters.com", "cfaa.cn", "interepo.com", "panjiva.com", "dnb.com", "aduna.com", "tradeint.com", "rocketreach.co", "circlehinternational.org", "ceginformacio.hu", "atninfo.com", "happydog-petfood.com", "disaronno.com", "finalscout.com", "jobcenter.mv", "en.nbd.ltd"
     }
 
     
@@ -33,32 +33,32 @@ def get_official_website(consignee_name: str, location: str) -> Optional[str]:
 
         
         if any(domain.endswith(nd) for nd in skip_domains):
-            print(f"⏩ Skipping {domain} (Unwanted domain)")
+            print(f" Skipping {domain} (Unwanted domain)")
             continue  
 
-        print(f"\n🔍 Evaluating: {link}")
-        print(f"🔹 Initial Score: {score}")
+        print(f"\n Evaluating: {link}")
+        print(f" Initial Score: {score}")
 
         # company name in domain
         clean_domain = domain.replace("www.", "")
         if consignee_name.lower().replace(" ", "") in clean_domain:
             score += 15  
-            print(f"✅ +15 (Company name in domain) | New Score: {score}")
+            print(f"+15 (Company name in domain) | New Score: {score}")
 
         #  terms from consignee name appear in domain
         if all(term in clean_domain for term in consignee_terms):
             score += 12  
-            print(f"✅ +12 (All terms from consignee in domain) | New Score: {score}")
+            print(f"+12 (All terms from consignee in domain) | New Score: {score}")
 
         # company name in title
         if consignee_name.lower() in title:
             score += 8
-            print(f"✅ +8 (Company name in title) | New Score: {score}")
+            print(f"+8 (Company name in title) | New Score: {score}")
 
         # terms in title
         if all(term in title for term in consignee_terms):
             score += 6
-            print(f"✅ +6 (All terms from consignee in title) | New Score: {score}")
+            print(f"+6 (All terms from consignee in title) | New Score: {score}")
 
         
         location_bonus = 10
@@ -96,7 +96,7 @@ def get_official_website(consignee_name: str, location: str) -> Optional[str]:
             print(f"-20 (Non-official domain detected: {domain}) | New Score: {score}")
 
         #common official TLDs
-        official_tlds = {".com", ".org", ".net", ".co"}
+        official_tlds = {".com", ".org", ".net", ".co", ".com.au"}
         if any(domain.endswith(tld) for tld in official_tlds):
             score += 3
             print(f"+3 (Official TLD detected) | New Score: {score}")
@@ -125,7 +125,8 @@ def get_official_website(consignee_name: str, location: str) -> Optional[str]:
         print(f"   URL: {result['link']}\n")
 
     
-    if scored_results and scored_results[0]['score'] > 10:
+    # if scored_results and scored_results[0]['score'] > -10:
+    if scored_results:
         website_url = scored_results[0]['link']
     else:
         print(f"No suitable website found for {consignee_name}\n")

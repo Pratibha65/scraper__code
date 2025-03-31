@@ -4,11 +4,9 @@ import requests
 from dotenv import load_dotenv
 
 
-
 def loadEnv() -> str:
     load_dotenv()
     SERP_API_KEY = os.getenv("SERP_API_KEY")
-
 
     if not SERP_API_KEY:
         raise ValueError("SERP_API_KEY is missing! Please check your .env file.")
@@ -80,3 +78,4 @@ def get_company_details(consignee_name: str, location: str) -> tuple[Optional[st
     return linkedin_url, linkedin_connected_people 
 
 # get_company_details(" ROYAL DOHA TRADING CONTRACTING AND SERVICES WLL","Doha") 
+ 
